@@ -138,11 +138,10 @@ def replace_css_url(css_content, base_url):
     # Replace relative URLs with absolute URLs
     def replace_url(match):
         url = match.group(2)  # Extract the URL
-        # If the URL is not absolute, make it absolute
-        if not url.startswith(('http://', 'https://')):
+        # Check if the URL is already absolute
+        if not urlparse(url).scheme:
             url = urljoin(base_url, url)
         return f'url("{url}")'
-
     new_css_content = pattern.sub(replace_url, css_content)
     return new_css_content
 
@@ -155,18 +154,25 @@ def proxy_view(request, site_name):
 
     # Make the external HTTP request
     r = requests.get(base_url, headers=headers)
-
+    print(1)
     # Parse the HTML content
     soup = BeautifulSoup(r.content, 'html.parser')
     # Handle img, script, and link tags
     for tag in soup.find_all(['img', 'script', 'link']):
         if tag.has_attr('src'):
-            tag['src'] = urljoin(base_url, tag['src'])
+            src_url = tag['src']
+            # Only apply urljoin if src is a relative URL
+            if not urlparse(src_url).scheme:
+                tag['src'] = urljoin(base_url, src_url)
         if tag.name == 'img':
             if tag.has_attr('srcset'):
-                tag['srcset'] = urljoin(base_url, tag['srcset'])
+                srcset_urls = tag['srcset'].split(', ')
+                tag['srcset'] = ', '.join(urljoin(base_url, urlparse(url).path) if not urlparse(url).scheme else url for url in srcset_urls)
         if tag.has_attr('href'):
-            tag['href'] = urljoin(base_url, tag['href'])
+            href_url = tag['href']
+            # Only apply urljoin if href is a relative URL
+            if not urlparse(href_url).scheme:
+                tag['href'] = urljoin(base_url, href_url)
 
     # Handle <style> tags for CSS URL replacement
     for tag in soup.find_all(style=True):
