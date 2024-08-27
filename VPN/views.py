@@ -3,10 +3,17 @@ import requests
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.http import QueryDict
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+
 try:
     from urlparse import urlparse
 except:
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, urljoin
+
+from requests_html import HTMLSession
 
 
 def proxy_viewbad(request, site_name, requests_args=None):
@@ -18,7 +25,7 @@ def proxy_viewbad(request, site_name, requests_args=None):
     If there are any additional arguments you wish to send to requests, put
     them in the requests_args dictionary.
     """
-    url = "https://www.python.org"
+    url = f"https://www.{site_name}"
     requests_args = (requests_args or {}).copy()
     headers = get_headers(request.META)
     params = request.GET.copy()
@@ -48,8 +55,9 @@ def proxy_viewbad(request, site_name, requests_args=None):
 
     proxy_response = HttpResponse(
         response.content,
-        status=response.status_code)
-
+        status=response.status_code,
+    content_type=response.headers['Content-Type'])
+    print(1)
     excluded_headers = set([
         # Hop-by-hop headers
         # ------------------
@@ -123,26 +131,55 @@ def get_headers(environ):
     return headers
 
 
+def replace_css_url(css_content, base_url):
+    # Define a regex pattern to match URLs in the CSS content
+    pattern = re.compile(r'url\((["\']?)(.*?)\1\)')
+
+    # Replace relative URLs with absolute URLs
+    def replace_url(match):
+        url = match.group(2)  # Extract the URL
+        # If the URL is not absolute, make it absolute
+        if not url.startswith(('http://', 'https://')):
+            url = urljoin(base_url, url)
+        return f'url("{url}")'
+
+    new_css_content = pattern.sub(replace_url, css_content)
+    return new_css_content
+
 def proxy_view(request, site_name):
     # Base URL of the site you are proxying
-    # base_url = "https://www.python.org"
     base_url = f"https://www.{site_name}"
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+    }
+
     # Make the external HTTP request
-    response = requests.get(base_url)
+    r = requests.get(base_url, headers=headers)
 
-    # Get the content type
-    content_type = response.headers.get('Content-Type', 'text/html')
-    location_header = response.headers.get('location')
-    print(f"LOCATION header: {location_header}")
     # Parse the HTML content
-    soup = BeautifulSoup(response.content, 'html.parser')
-    # response["location"] = make_absolute_location(response.url, value)
-
-    # Modify URLs to make them absolute
+    soup = BeautifulSoup(r.content, 'html.parser')
+    # Handle img, script, and link tags
     for tag in soup.find_all(['img', 'script', 'link']):
         if tag.has_attr('src'):
-            tag['src'] = requests.compat.urljoin(base_url, tag['src'])
+            tag['src'] = urljoin(base_url, tag['src'])
+        if tag.name == 'img':
+            if tag.has_attr('srcset'):
+                tag['srcset'] = urljoin(base_url, tag['srcset'])
         if tag.has_attr('href'):
-            tag['href'] = requests.compat.urljoin(base_url, tag['href'])
+            tag['href'] = urljoin(base_url, tag['href'])
+
+    # Handle <style> tags for CSS URL replacement
+    for tag in soup.find_all(style=True):
+        style = tag['style']
+        updated_style = style.replace('url(', f'url({base_url}')
+        tag['style'] = updated_style
+    # Handle URLs in <style> tags as before
+    for style_tag in soup.find_all('style'):
+        if style_tag.string:
+            updated_css = style_tag.string.replace('url(', f'url({base_url}')
+            style_tag.string = updated_css
+
+    # Determine content type
+    content_type = r.headers.get('Content-Type', 'text/html')
     # Return the modified HTML content
     return HttpResponse(str(soup), content_type=content_type)
