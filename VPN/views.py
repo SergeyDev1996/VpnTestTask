@@ -154,7 +154,6 @@ def proxy_view(request, site_name):
 
     # Make the external HTTP request
     r = requests.get(base_url, headers=headers)
-    print(1)
     # Parse the HTML content
     soup = BeautifulSoup(r.content, 'html.parser')
     # Handle img, script, and link tags
