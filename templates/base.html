@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> Your VPN</title>
+    {% load static %}
+    {% block css %}{% endblock %}
+    <style>
+    /* Base styles for body to ensure full height and no margin */
+    body, html {
+      height: 100%;
+      margin: 0;
+      font-family: Arial, sans-serif; /* Example font */
+    }
+    /* Header styles */
+    header {
+      background-color: #f8f8f8; /* Light grey background */
+      padding: 10px 20px; /* Padding to match your signup form style */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+      position: fixed; /* Fixed position to stay at the top */
+      top: 0; /* Stick to the top */
+      left: 0; /* Align to the left */
+      right: 0; /* Align to the right */
+      z-index: 1000; /* Above other items */
+    }
+
+    /* Main content styles */
+    main {
+      padding-top: 60px; /* Add padding to push the main content down so it doesn't get hidden behind the fixed header */
+    }
+
+    /* Navigation link styles */
+    nav a {
+      text-decoration: none; /* Removes underline from links */
+      background-color: #e7e7e7; /* Background color for buttons */
+      color: #333; /* Dark text color for links */
+      padding: 10px 15px; /* Padding inside buttons */
+      border-radius: 4px; /* Rounded corners for buttons */
+      margin-left: 10px; /* Spacing between buttons */
+      display: inline-block; /* Display as inline-block for proper spacing */
+      line-height: 1.5; /* Line height for vertical alignment */
+      transition: background-color 0.3s; /* Transition for hover effect */
+    }
+
+    /* Hover effect for buttons */
+    nav a:hover {
+      background-color: #d4d4d4; /* Slightly darker shade on hover */
+    }
+
+    /* Main content styles */
+    main {
+      padding-top: 60px; /* Padding to push down content below fixed header */
+    }
+
+    /* Responsive design for the navigation bar */
+    @media (max-width: 768px) {
+      header {
+        padding: 10px; /* Adjust padding for smaller screens */
+      }
+
+      nav a {
+        margin-left: 5px; /* Reduce spacing between buttons on smaller screens */
+      }
+    }
+    </style>
+
+</head>
+<body>
+<header>
+    <!-- Navigation buttons will go here -->
+    <nav>
+      {% if user.is_authenticated %}
+        <a href="{% url 'user:logout' %}" class="logout-button">Logout</a>
+        <a href="{% url 'sites:my_sites' %}" class="my-sites-button">My Sites</a>
+        <a href="{% url 'user:profile' %}" class="my-profile-button">My Profile</a>
+      {% else %}
+        <a href="{% url 'user:signup' %}">SignUp</a>
+        <a href="{% url 'user:login' %}" class="login-button">Login</a>
+      {% endif %}
+    </nav>
+</header>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-10 ">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/sites/my_sites.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Your Sites</h2>
+    <ul class="site-list">
+        {% for site in sites %}
+        <li>
+            <strong>{{ site.name }}</strong> - <a href="{% url 'sites:proxy_view' site_name=site.name %}" target="_blank">{{ site.url }}</a>
+            <!-- You can also add a button or link to use the internal proxy here -->
+{#            <!-- Example: <a href="{% url 'proxy_view' site_name=site.name %}">Visit via Proxy</a> -->#}
+        </li>
+        {% empty %}
+        <li>No sites created.</li>
+        {% endfor %}
+        <a href = {% url 'sites:create_site' %}> Create site </a>
+    </ul>
+</div>
+{% endblock %}

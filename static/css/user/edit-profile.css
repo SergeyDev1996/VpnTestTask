@@ -1,0 +1,58 @@
+/* Container for the form to center it on the page */
+.container {
+  max-width: 400px;
+  margin: 50px auto; /* Centers the form with a margin from the top */
+  padding: 20px;
+  background-color: #fff; /* White background */
+  border: 1px solid #ccc; /* Light grey border */
+  border-radius: 4px; /* Rounded corners */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Style for form elements */
+.form-group {
+  margin-bottom: 15px; /* Space between form groups */
+}
+
+.form-group label {
+  display: block; /* Make the label take the full width */
+  margin-bottom: 5px; /* Space between the label and the input */
+}
+
+.form-group input[type="text"],
+.form-group input[type="password"] {
+  width: 100%; /* Make the input take the full width of its parent */
+  padding: 10px;
+  border: 1px solid #ccc; /* Light grey border */
+  border-radius: 4px; /* Rounded corners for the input */
+}
+
+/* Style for the submit button */
+button[type="submit"] {
+  width: 100%; /* Make the button take the full width of its parent */
+  padding: 10px;
+  background-color: #4CAF50; /* Green background */
+  color: white; /* White text */
+  border: none; /* Remove default border */
+  border-radius: 4px; /* Rounded corners for the button */
+  cursor: pointer; /* Cursor to indicate it's a clickable button */
+  font-size: 1em; /* Increase font size for better readability */
+  margin-top: 20px; /* Space above the button */
+}
+
+button[type="submit"]:hover {
+  background-color: #45a049; /* Slightly darker green on hover for feedback */
+}
+
+/* Style for error messages */
+.error, .errorlist {
+  color: red; /* Red text for errors */
+  font-size: 0.9em; /* Slightly smaller text for errors */
+  margin-top: 5px; /* Space between the input and the error message */
+}
+
+/* If you have non-field errors */
+.form-non-field-errors {
+  color: red; /* Red text for non-field errors */
+  margin-bottom: 15px; /* Space below the non-field errors */
+}

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/sites/site_not_exist.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Site Not Found</h2>
+    <p>The site you are trying to access does not exist in our records.</p>
+    <p>If you believe this is an error, please check the URL or contact support.</p>
+    <p>Alternatively, you can <a href="{% url 'sites:create_site' %}">create a new site</a> or return to your <a href="{% url 'sites:my_sites' %}">site list</a>.</p>
+</div>
+{% endblock %}

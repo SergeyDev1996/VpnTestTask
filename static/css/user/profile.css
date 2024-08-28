@@ -1,0 +1,53 @@
+/* User Profile Page Styles */
+.profile-container {
+    max-width: 400px;
+    margin: auto;
+    background: #fff;
+    padding: 2em;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    margin-top: 50px;
+}
+
+.profile-container h1 {
+    margin-bottom: 0.5em;
+    color: #333;
+    font-size: 24px;
+}
+
+.profile-detail {
+    font-size: 16px;
+    color: #555;
+    margin: 0.5em 0;
+    line-height: 1.5;
+}
+
+.profile-detail strong {
+    color: #333;
+    display: block; /* makes the label appear above the value */
+    margin-bottom: 0.25em;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.edit-profile-link {
+    display: inline-block;
+    margin-top: 1em;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: #fff;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease;
+}
+
+.edit-profile-link:hover {
+    background-color: #0056b3;
+    text-decoration: none; /* removes underline on hover */
+    color: #fff;
+}

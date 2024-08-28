@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block css %}
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'css/user/edit-profile.css' %}">
+{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Edit Profile</h2>
+    <form method="post" action="{% url 'user:edit_profile' %}">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <div class="form-group">
+            <label for="{{ form.username.id_for_label }}">Username:</label>
+            {{ form.username }}
+            {% if form.username.errors %}
+                <div class="error">
+                    {{ form.username.errors.as_text }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">New password:</label>
+            {{ form.password1 }}
+            {% if form.password1.errors %}
+                <div class="error">
+                    {{ form.password1.errors.as_text }}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">Confirm new password:</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+                <div class="error">
+                    {{ form.password2.errors.as_text }}
+                </div>
+            {% endif %}
+        </div>
+
+        <button type="submit">Update</button>
+    </form>
+</div>
+{% endblock %}

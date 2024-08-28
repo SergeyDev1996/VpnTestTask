@@ -4,9 +4,14 @@ from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.http import QueryDict
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
 from webdriver_manager.chrome import ChromeDriverManager
+
+from VPN.utils import link_to_our_website
 
 try:
     from urlparse import urlparse
@@ -145,46 +150,104 @@ def replace_css_url(css_content, base_url):
     new_css_content = pattern.sub(replace_url, css_content)
     return new_css_content
 
-def proxy_view(request, site_name):
+
+
+def proxy_view(request, site_name, path):
     # Base URL of the site you are proxying
     base_url = f"https://www.{site_name}"
+    if path:
+        base_url += path
     headers = {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
     }
 
+    chrome_options = Options()
+
+    chrome_options.add_argument(
+        '--headless')  # run in background
+    chrome_options.add_argument('--ignore-certificate-errors')
+    chrome_options.add_argument('--no-sandbox')
+    # chrome_options.add_argument('--disable-gpu')
+    # chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--start-maximized')
+    # chrome_options.set_capability(
+    #     'goog:loggingPrefs',  # for getting performance and network
+    #     {'performance': 'ALL'}  # chrome devtools protocol logs
+    # )
+
+    # driver = webdriver.Chrome(options=chrome_options)
     # Make the external HTTP request
     r = requests.get(base_url, headers=headers)
     # Parse the HTML content
-    soup = BeautifulSoup(r.content, 'html.parser')
+    # soup = BeautifulSoup(r.content, 'html.parser')
     # Handle img, script, and link tags
-    for tag in soup.find_all(['img', 'script', 'link']):
-        if tag.has_attr('src'):
-            src_url = tag['src']
-            # Only apply urljoin if src is a relative URL
-            if not urlparse(src_url).scheme:
-                tag['src'] = urljoin(base_url, src_url)
-        if tag.name == 'img':
-            if tag.has_attr('srcset'):
-                srcset_urls = tag['srcset'].split(', ')
-                tag['srcset'] = ', '.join(urljoin(base_url, urlparse(url).path) if not urlparse(url).scheme else url for url in srcset_urls)
-        if tag.has_attr('href'):
-            href_url = tag['href']
-            # Only apply urljoin if href is a relative URL
-            if not urlparse(href_url).scheme:
-                tag['href'] = urljoin(base_url, href_url)
+    # driver.get(base_url)
+    # WebDriverWait(driver, 10) \
+    #     .until(
+    #     EC.presence_of_element_located((By.TAG_NAME, 'link'))
+    # )  # wait for full load of page
+    # html_content = driver.page_source
+    html_content = r.content
+    soup = BeautifulSoup(html_content, "html.parser")
+    head = soup.find('head')
+    current_host = request.get_host()
+    if head:
+        base_tag = soup.new_tag('base', href=base_url)
+        head.insert(0, base_tag)
+    for link in soup.find_all(['a']):
+        if link.get('href'):
+            try:
+                is_link_to_our_website = link_to_our_website(site_name=base_url, current_url=link["href"])
+            except KeyError:
+                print(1)
+            if is_link_to_our_website:
+                # Parse the link
+                parsed_url = urlparse(link["href"])
+
+                # If it's a relative path, build the full URL
+                if not parsed_url.netloc:
+                    # Manually combine the protocol, domain, and path
+                    full_url = f"http://127.0.0.1:8000/{site_name}{parsed_url.path}{parsed_url.query}{parsed_url.fragment}"
+                else:
+                    # If it's already a full URL (absolute), we leave it as is
+                    full_url = link["href"]
+                # Assign the new URL to the link
+                link["href"] = full_url
+    # for tag in soup.find_all(['img', 'script', 'link', 'meta']):
+    #     if tag.has_attr('src'):
+    #         src_url = tag['src']
+    #         # Only apply urljoin if src is a relative URL
+    #         if not urlparse(src_url).scheme:
+    #             tag['src'] = urljoin(base_url, src_url)
+    #     if tag.name == 'img':
+    #         if tag.has_attr('srcset'):
+    #             srcset_urls = tag['srcset'].split(', ')
+    #             tag['srcset'] = ', '.join(urljoin(base_url, urlparse(url).path) if not urlparse(url).scheme else url for url in srcset_urls)
+    #     if tag.has_attr('href'):
+    #         href_url = tag['href']
+    #         # Only apply urljoin if href is a relative URL
+    #         if not urlparse(href_url).scheme:
+    #             tag['href'] = urljoin(base_url, href_url)
 
     # Handle <style> tags for CSS URL replacement
-    for tag in soup.find_all(style=True):
-        style = tag['style']
-        updated_style = style.replace('url(', f'url({base_url}')
-        tag['style'] = updated_style
-    # Handle URLs in <style> tags as before
-    for style_tag in soup.find_all('style'):
-        if style_tag.string:
-            updated_css = style_tag.string.replace('url(', f'url({base_url}')
-            style_tag.string = updated_css
-
+    # for tag in soup.find_all(style=True):
+    #     style = tag['style']
+    #     updated_style = style.replace('url(', f'url({base_url}')
+    #     tag['style'] = updated_style
+    # # Handle URLs in <style> tags as before
+    # for style_tag in soup.find_all('style'):
+    #     if style_tag.string:
+    #         updated_css = style_tag.string.replace('url(', f'url({base_url}')
+    #         style_tag.string = updated_css
+    # for media_tag in soup.find_all(['picture', 'audio', 'video']):
+    #     # Replace URLs in 'source' tags within 'picture'
+    #     for source in media_tag.find_all('source'):
+    #         if source.has_attr('srcset'):
+    #             source['srcset'] = urljoin(base_url, source['srcset'])
+    #     # Replace URL in 'img' tags within 'picture'
+    #     if media_tag.has_attr('src'):
+    #         media_tag.img['src'] = urljoin(base_url, media_tag['src'])
     # Determine content type
-    content_type = r.headers.get('Content-Type', 'text/html')
+    # content_type = r.headers.get('Content-Type', 'text/html')
     # Return the modified HTML content
-    return HttpResponse(str(soup), content_type=content_type)
+    return HttpResponse(str(soup))

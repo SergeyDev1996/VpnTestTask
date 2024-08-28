@@ -1,6 +1,7 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from VPN.views import proxy_view
 
 urlpatterns = [
-    path('<str:site_name>/', proxy_view, name='proxy_view'),]
+    re_path(r'^(?P<site_name>[^/]+)(?P<path>.*)$', proxy_view, name='proxy_view')
+]

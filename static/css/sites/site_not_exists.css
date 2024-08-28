@@ -1,0 +1,26 @@
+.container {
+    text-align: center;
+    padding-top: 50px;
+}
+
+.container h2 {
+    color: #d9534f; /* A color that indicates an error */
+}
+
+.container p {
+    margin: 20px 0;
+}
+
+.container a {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    text-decoration: none;
+}
+
+.container a:hover {
+    background-color: #0056b3;
+}

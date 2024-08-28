@@ -1,0 +1,18 @@
+.site-list {
+    list-style-type: none;
+    padding: 0;
+}
+.site-list li {
+    background: #f4f4f4;
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 4px;
+}
+.site-list li a {
+    color: #007bff;
+    text-decoration: none;
+}
+.site-list li a:hover {
+    text-decoration: underline;
+}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block css %}
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/user/profile.css' %}">
+{% endblock %}
+{% block content %}
+    <div class="profile-container">
+        <h1>User Profile</h1>
+        <p class="profile-detail"><strong>Email:</strong> {{ email }}</p>
+        <p class="profile-detail"><strong>Username:</strong> {{ username }}</p>
+        <a href="{% url 'user:edit_profile' %}">Edit Profile</a>
+        <br>
+        <a href="{% url 'sites:my_sites' %}">My sites</a>
+    </div>
+{% endblock %}
