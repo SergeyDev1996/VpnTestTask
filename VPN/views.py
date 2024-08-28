@@ -3,22 +3,18 @@ import requests
 from bs4 import BeautifulSoup
 from django.http import HttpResponse
 from django.http import QueryDict
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
-from webdriver_manager.chrome import ChromeDriverManager
+# from selenium import webdriver
+# from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+#
+# from webdriver_manager.chrome import ChromeDriverManager
 
 from VPN.utils import link_to_our_website
+from urllib.parse import urlparse, urljoin
 
-try:
-    from urlparse import urlparse
-except:
-    from urllib.parse import urlparse, urljoin
-
-from requests_html import HTMLSession
+# from requests_html import HTMLSession
 
 
 def proxy_viewbad(request, site_name, requests_args=None):
@@ -161,15 +157,15 @@ def proxy_view(request, site_name, path):
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
     }
 
-    chrome_options = Options()
-
-    chrome_options.add_argument(
-        '--headless')  # run in background
-    chrome_options.add_argument('--ignore-certificate-errors')
-    chrome_options.add_argument('--no-sandbox')
-    # chrome_options.add_argument('--disable-gpu')
-    # chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--start-maximized')
+    # chrome_options = Options()
+    #
+    # chrome_options.add_argument(
+    #     '--headless')  # run in background
+    # chrome_options.add_argument('--ignore-certificate-errors')
+    # chrome_options.add_argument('--no-sandbox')
+    # # chrome_options.add_argument('--disable-gpu')
+    # # chrome_options.add_argument('--disable-dev-shm-usage')
+    # chrome_options.add_argument('--start-maximized')
     # chrome_options.set_capability(
     #     'goog:loggingPrefs',  # for getting performance and network
     #     {'performance': 'ALL'}  # chrome devtools protocol logs
@@ -188,9 +184,20 @@ def proxy_view(request, site_name, path):
     # )  # wait for full load of page
     # html_content = driver.page_source
     html_content = r.content
+    print(1)
     soup = BeautifulSoup(html_content, "html.parser")
     head = soup.find('head')
     current_host = request.get_host()
+    link_tag = soup.find('link', {
+        'as': 'font',
+        'crossorigin': '',
+        'href': '/lib/fonts/fontawesome.woff2?14663396',
+        'rel': 'preload',
+        'type': 'font/woff2'
+    })
+    # Create a new link tag to replace the old one
+    if link_tag:
+        link_tag['href'] = 'http://127.0.0.1:8000/w3schools.com/lib/fonts/fontawesome.woff2?14663396'
     if head:
         base_tag = soup.new_tag('base', href=base_url)
         head.insert(0, base_tag)
@@ -203,7 +210,6 @@ def proxy_view(request, site_name, path):
             if is_link_to_our_website:
                 # Parse the link
                 parsed_url = urlparse(link["href"])
-
                 # If it's a relative path, build the full URL
                 if not parsed_url.netloc:
                     # Manually combine the protocol, domain, and path
@@ -213,6 +219,14 @@ def proxy_view(request, site_name, path):
                     full_url = link["href"]
                 # Assign the new URL to the link
                 link["href"] = full_url
+    link_tag = soup.find('link', {
+        'as': 'font',
+        'crossorigin': '',
+        'href': '/lib/fonts/fontawesome.woff2?14663396',
+        'rel': 'preload',
+        'type': 'font/woff2'
+    })
+
     # for tag in soup.find_all(['img', 'script', 'link', 'meta']):
     #     if tag.has_attr('src'):
     #         src_url = tag['src']
@@ -250,4 +264,7 @@ def proxy_view(request, site_name, path):
     # Determine content type
     # content_type = r.headers.get('Content-Type', 'text/html')
     # Return the modified HTML content
-    return HttpResponse(str(soup))
+    response = HttpResponse(str(soup))
+    # Add the Access-Control-Allow-Origin header
+    response["Access-Control-Allow-Origin"] = "*"
+    return response
