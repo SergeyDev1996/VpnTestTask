@@ -151,12 +151,16 @@ def replace_css_url(css_content, base_url):
 def proxy_view(request, site_name, path):
     # Base URL of the site you are proxying
     base_url = f"https://www.{site_name}"
+    query_string = request.META.get('QUERY_STRING', '')
     if path:
         base_url += path
+    if query_string:
+        base_url += f"?{query_string}"
+    if "jquery" in path:
+        print(1)
     headers = {
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
     }
-
     # chrome_options = Options()
     #
     # chrome_options.add_argument(
@@ -173,6 +177,8 @@ def proxy_view(request, site_name, path):
 
     # driver = webdriver.Chrome(options=chrome_options)
     # Make the external HTTP request
+    if "woff" in base_url:
+        print(1)
     r = requests.get(base_url, headers=headers)
     # Parse the HTML content
     # soup = BeautifulSoup(r.content, 'html.parser')
@@ -184,49 +190,42 @@ def proxy_view(request, site_name, path):
     # )  # wait for full load of page
     # html_content = driver.page_source
     html_content = r.content
-    print(1)
     soup = BeautifulSoup(html_content, "html.parser")
     head = soup.find('head')
-    current_host = request.get_host()
-    link_tag = soup.find('link', {
-        'as': 'font',
-        'crossorigin': '',
-        'href': '/lib/fonts/fontawesome.woff2?14663396',
-        'rel': 'preload',
-        'type': 'font/woff2'
-    })
+    if "lib/topnav/main.css" in base_url:
+        print(1)
     # Create a new link tag to replace the old one
-    if link_tag:
-        link_tag['href'] = 'http://127.0.0.1:8000/w3schools.com/lib/fonts/fontawesome.woff2?14663396'
+    current_host = f"{request.scheme}://{request.get_host()}"
     if head:
         base_tag = soup.new_tag('base', href=base_url)
         head.insert(0, base_tag)
-    for link in soup.find_all(['a']):
-        if link.get('href'):
-            try:
-                is_link_to_our_website = link_to_our_website(site_name=base_url, current_url=link["href"])
-            except KeyError:
-                print(1)
+    for tag in soup.find_all(['a', 'img', 'script', 'link']):
+        if tag.name == 'a' and "woff" not in path:
+            is_link_to_our_website = link_to_our_website(site_name=base_url, current_url=tag["href"])
             if is_link_to_our_website:
-                # Parse the link
-                parsed_url = urlparse(link["href"])
-                # If it's a relative path, build the full URL
+                parsed_url = urlparse(tag["href"])
                 if not parsed_url.netloc:
-                    # Manually combine the protocol, domain, and path
-                    full_url = f"http://127.0.0.1:8000/{site_name}{parsed_url.path}{parsed_url.query}{parsed_url.fragment}"
+                    full_url = f"{current_host}/{site_name}{parsed_url.path}{parsed_url.query}{parsed_url.fragment}"
                 else:
-                    # If it's already a full URL (absolute), we leave it as is
-                    full_url = link["href"]
-                # Assign the new URL to the link
-                link["href"] = full_url
-    link_tag = soup.find('link', {
-        'as': 'font',
-        'crossorigin': '',
-        'href': '/lib/fonts/fontawesome.woff2?14663396',
-        'rel': 'preload',
-        'type': 'font/woff2'
-    })
-
+                    full_url = tag["href"]
+                tag["href"] = full_url
+        else:
+            for attr in ['src', 'href']:
+                if tag.has_attr(attr):
+                    url = tag[attr]
+                    if "14663396" in url:
+                        print(1)
+                    parsed_url = urlparse(url)
+                        # Properly format the URL, including query and fragment
+                    if parsed_url.netloc:
+                        full_url = f"{current_host}{parsed_url.netloc}{parsed_url.path}"
+                    else:
+                        full_url = f"{current_host}/{site_name}{parsed_url.path}"
+                    if parsed_url.query:
+                        full_url += f"?{parsed_url.query}"
+                    if parsed_url.fragment:
+                        full_url += f"#{parsed_url.fragment}"
+                    tag[attr] = full_url
     # for tag in soup.find_all(['img', 'script', 'link', 'meta']):
     #     if tag.has_attr('src'):
     #         src_url = tag['src']
@@ -264,7 +263,8 @@ def proxy_view(request, site_name, path):
     # Determine content type
     # content_type = r.headers.get('Content-Type', 'text/html')
     # Return the modified HTML content
-    response = HttpResponse(str(soup))
+    content_type = r.headers.get('content-type')
+    response = HttpResponse(str(soup), content_type=content_type, status=r.status_code)
     # Add the Access-Control-Allow-Origin header
     response["Access-Control-Allow-Origin"] = "*"
     return response
