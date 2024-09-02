@@ -1,128 +1,13 @@
 import re
 import requests
 from bs4 import BeautifulSoup
-from django.http import HttpResponse, HttpResponseNotFound
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseNotFound, HttpResponseForbidden
 from django.http import QueryDict
-# from selenium import webdriver
-# from selenium.webdriver.chrome.options import Options
-# from selenium.webdriver.common.by import By
-# from selenium.webdriver.support.ui import WebDriverWait
-# from selenium.webdriver.support import expected_conditions as EC
-#
-# from webdriver_manager.chrome import ChromeDriverManager
-
-from VPN.utils import link_to_our_website
+from VPN.utils import link_to_our_website, format_a_link, format_media_link
 from urllib.parse import urlparse, urljoin
 
-# from requests_html import HTMLSession
-
-
-def change_headers(request, site_name, requests_args=None):
-    """
-    Forward as close to an exact copy of the request as possible along to the
-    given url.  Respond with as close to an exact copy of the resulting
-    response as possible.
-
-    If there are any additional arguments you wish to send to requests, put
-    them in the requests_args dictionary.
-    """
-    requests_args = (requests_args or {}).copy()
-    headers = get_headers(request.META)
-    params = request.GET.copy()
-
-    if 'headers' not in requests_args:
-        requests_args['headers'] = {}
-    if 'data' not in requests_args:
-        requests_args['data'] = request.body
-    if 'params' not in requests_args:
-        requests_args['params'] = QueryDict('', mutable=True)
-
-    # Overwrite any headers and params from the incoming request with explicitly
-    # specified values for the requests library.
-    headers.update(requests_args['headers'])
-    params.update(requests_args['params'])
-
-    # If there's a content-length header from Django, it's probably in all-caps
-    # and requests might not notice it, so just remove it.
-    for key in list(headers.keys()):
-        if key.lower() == 'content-length':
-            del headers[key]
-
-    requests_args['headers'] = headers
-    requests_args['params'] = params
-
-    response = requests.request(request.method, url, **requests_args)
-
-    proxy_response = HttpResponse(
-        response.content,
-        status=response.status_code,
-    content_type=response.headers['Content-Type'])
-    print(1)
-    excluded_headers = set([
-        # Hop-by-hop headers
-        # ------------------
-        # Certain response headers should NOT be just tunneled through.  These
-        # are they.  For more info, see:
-        # http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.5.1
-        'connection', 'keep-alive', 'proxy-authenticate',
-        'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
-        'upgrade',
-
-        # Although content-encoding is not listed among the hop-by-hop headers,
-        # it can cause trouble as well.  Just let the server set the value as
-        # it should be.
-        'content-encoding',
-
-        # Since the remote server may or may not have sent the content in the
-        # same encoding as Django will, let Django worry about what the length
-        # should be.
-        'content-length',
-    ])
-    for key, value in response.headers.items():
-        if key.lower() in excluded_headers:
-            continue
-        elif key.lower() == 'location':
-            # If the location is relative at all, we want it to be absolute to
-            # the upstream server.
-            proxy_response[key] = make_absolute_location(response.url, value)
-        else:
-            proxy_response[key] = value
-    return proxy_response
-
-
-def make_absolute_location(base_url, location):
-    """
-    Convert a location header into an absolute URL.
-    """
-    absolute_pattern = re.compile(r'^[a-zA-Z]+://.*$')
-    if absolute_pattern.match(location):
-        return location
-    parsed_url = urlparse(base_url)
-    if location.startswith('//'):
-        # scheme relative
-        return parsed_url.scheme + ':' + location
-    elif location.startswith('/'):
-        # host relative
-        return parsed_url.scheme + '://' + parsed_url.netloc + location
-    else:
-        # path relative
-        return parsed_url.scheme + '://' + parsed_url.netloc + parsed_url.path.rsplit('/', 1)[0] + '/' + location
-    return location
-
-
-def get_headers(environ):
-    """
-    Retrieve the HTTP headers from a WSGI environment dictionary.  See
-    https://docs.djangoproject.com/en/dev/ref/request-response/#django.http.HttpRequest.META
-    """
-    headers = {}
-    for key, value in environ.items():
-        # Sometimes, things don't like when you send the requesting host through.
-        if key.startswith('HTTP_') and key != 'HTTP_HOST':
-            headers[key[5:].replace('_', '-')] = value
-        elif key in ('CONTENT_TYPE', 'CONTENT_LENGTH'):
-            headers[key.replace('_', '-')] = value
-    return headers
+from sites.models import Site
 
 
 def replace_css_url(css_content, base_url):
@@ -147,121 +32,38 @@ def format_path(path):
             path = '/' + '/'.join(path_parts[:-1])
     return path
 
+@login_required
 def proxy_view(request, site_name, path=None):
+    user_site = Site.objects.filter(user=request.user, url=site_name).exists()
+    if not user_site:
+        return HttpResponseForbidden("You do not have access to this site.")
     # Base URL of the site you are proxying
-    base_url = f"https://www.{site_name}"
+    base_url = f"https://www.{site_name}/"
     query_string = request.META.get('QUERY_STRING', '')
     if path:
         base_url += path
     if query_string:
         base_url += f"?{query_string}"
-    # requests_args = {}.copy()
-    # headers = get_headers(request.META)
-    # params = request.GET.copy()
-    # if 'headers' not in requests_args:
-    #     requests_args['headers'] = {}
-    # if 'data' not in requests_args:
-    #     requests_args['data'] = request.body
-    # if 'params' not in requests_args:
-    #     requests_args['params'] = QueryDict('', mutable=True)
-
-    # Overwrite any headers and params from the incoming request with explicitly
-    # # specified values for the requests library.
-    # headers.update(requests_args['headers'])
-    # params.update(requests_args['params'])
     headers = {"user-agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"}
-
-    # chrome_options = Options()
-    #
-    # chrome_options.add_argument(
-    #     '--headless')  # run in background
-    # chrome_options.add_argument('--ignore-certificate-errors')
-    # chrome_options.add_argument('--no-sandbox')
-    # # chrome_options.add_argument('--disable-gpu')
-    # # chrome_options.add_argument('--disable-dev-shm-usage')
-    # chrome_options.add_argument('--start-maximized')
-    # chrome_options.set_capability(
-    #     'goog:loggingPrefs',  # for getting performance and network
-    #     {'performance': 'ALL'}  # chrome devtools protocol logs
-    # )
-
-    # driver = webdriver.Chrome(options=chrome_options)
-    # Make the external HTTP request
     r = requests.get(base_url, headers=headers)
-    excluded_headers = set([
-        # Hop-by-hop headers
-        # ------------------
-        # Certain response headers should NOT be just tunneled through.  These
-        # are they.  For more info, see:
-        # http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.5.1
-        'connection', 'keep-alive', 'proxy-authenticate',
-        'proxy-authorization', 'te', 'trailers', 'transfer-encoding',
-        'upgrade',
-
-        # Although content-encoding is not listed among the hop-by-hop headers,
-        # it can cause trouble as well.  Just let the server set the value as
-        # it should be.
-        'content-encoding',
-
-        # Since the remote server may or may not have sent the content in the
-        # same encoding as Django will, let Django worry about what the length
-        # should be.
-        'content-length',
-    ])
-
-    # Parse the HTML content
-    # soup = BeautifulSoup(r.content, 'html.parser')
-    # Handle img, script, and link tags
-    # driver.get(base_url)
-    # WebDriverWait(driver, 10) \
-    #     .until(
-    #     EC.presence_of_element_located((By.TAG_NAME, 'link'))
-    # )  # wait for full load of page
-    # html_content = driver.page_source
     html_content = r.content
     soup = BeautifulSoup(html_content, "html.parser")
     head = soup.find('head')
     # Create a new link tag to replace the old one
-    current_host = f"{request.scheme}://{request.get_host()}"
+    current_host = f"{request.scheme}://{request.get_host()}/proxy"
     if head:
         base_tag = soup.new_tag('base', href=base_url)
         head.insert(0, base_tag)
     for tag in soup.find_all(['a', 'img', 'script', 'link']):
         if tag.name == 'a':
             href = tag.get("href", "")
-            if "css_intro" in href:
-                print(1)
-
-            is_link_to_our_website = link_to_our_website(site_name=base_url, current_url=href)
-            if is_link_to_our_website:
-                parsed_url = urlparse(href)
-                # formatted_path = format_path(path)
-                if not parsed_url.netloc:
-                    # Construct the full URL if it is a relative path
-
-                    full_url = f"{current_host}/{site_name}{parsed_url.path}"
-                    if parsed_url.query:
-                        full_url += f"?{parsed_url.query}"
-                    if parsed_url.fragment:
-                        full_url += f"#{parsed_url.fragment}"
-                else:
-                    full_url = href
-                tag["href"] = full_url
+            full_url = format_a_link(base_url=base_url, href=href, path=path,
+                                     site_name=site_name, current_host=current_host)
+            tag["href"] = full_url
         else:
             for attr in ['src', 'href']:
-                if tag.has_attr(attr):
-                    url = tag[attr]
-                    parsed_url = urlparse(url)
-                        # Properly format the URL, including query and fragment
-                    if parsed_url.netloc:
-                        full_url = f"{current_host}/static_files_proxy/{parsed_url.netloc}{parsed_url.path}"
-                    else:
-                        full_url = f"{current_host}/static_files_proxy/{site_name}{parsed_url.path}"
-                    if parsed_url.query:
-                        full_url += f"?{parsed_url.query}"
-                    if parsed_url.fragment:
-                        full_url += f"#{parsed_url.fragment}"
-                    tag[attr] = full_url
+                full_url = format_media_link(tag=tag, attr=attr, site_name=site_name, current_host=current_host)
+                tag[attr] = full_url
     # for tag in soup.find_all(['img', 'script', 'link', 'meta']):
     #     if tag.has_attr('src'):
     #         src_url = tag['src']
@@ -303,22 +105,21 @@ def proxy_view(request, site_name, path=None):
     proxy_response = HttpResponse(str(soup), content_type=content_type, status=r.status_code)
     return proxy_response
 
-
+@login_required
 def static_files_proxy_view(request, site_name, resource_path):
+    user_site = Site.objects.filter(user=request.user, url=site_name).exists()
+    if not user_site:
+        return HttpResponseForbidden("You do not have access to this site.")
     # Ensure the site_name forms a correct URL
-    base_url = f"https://www.{site_name}"
-
+    base_url = f"https://{site_name}"
     # Properly join the resource path to the base URL
     full_url = urljoin(base_url, resource_path)
     # Include the query string if it exists
     query_string = request.META.get('QUERY_STRING', '')
     if query_string:
         full_url += f"?{query_string}"
-    try:
-        response = requests.get(full_url)
-        response.raise_for_status()  # Raise an error for bad responses (4XX or 5XX)
-    except requests.exceptions.RequestException as e:
-        raise HttpResponseNotFound("Requested page was not found")
+    response = requests.get(full_url)
+    response.raise_for_status()  # Raise an error for bad responses (4XX or 5XX)
     proxy_response = HttpResponse(response.content, content_type=response.headers.get('content-type'))
     proxy_response["Access-Control-Allow-Origin"] = "*"
     return proxy_response
