@@ -8,3 +8,5 @@ urlpatterns = [
     path('<str:site_name>/', proxy_view, name='proxy_view'),
     path('<str:site_name>/<path:path>', proxy_view, name='proxy_view_with_path'),
 ]
+
+app_name = "VPN"

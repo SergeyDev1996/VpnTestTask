@@ -1,5 +1,7 @@
 from urllib.parse import urlparse
 
+from sites.models import Site
+
 
 def extract_base_domain(url: str) -> str:
     """
@@ -68,20 +70,28 @@ def format_a_link(base_url: str, href: str, path: str, site_name: str, current_h
                 full_url += f"#{parsed_url.fragment}"
         else:
             full_url = href
-    return full_url
+        return full_url
 
 
-def format_media_link(tag, attr, site_name, current_host):
+def format_media_link(tag, attr, site, current_host):
     if tag.has_attr(attr):
         url = tag[attr]
         parsed_url = urlparse(url)
         # Properly format the URL, including query and fragment
         if parsed_url.netloc:
-            full_url = f"{current_host}/static_files_proxy/{parsed_url.netloc}{parsed_url.path}"
+            full_url = f"{current_host}/static_files_proxy/{site.name}/{parsed_url.netloc}{parsed_url.path}"
         else:
-            full_url = f"{current_host}/static_files_proxy/{site_name}{parsed_url.path}"
+            full_url = f"{current_host}/static_files_proxy/{site.name}/{site.url}{parsed_url.path}"
         if parsed_url.query:
             full_url += f"?{parsed_url.query}"
         if parsed_url.fragment:
             full_url += f"#{parsed_url.fragment}"
         return full_url
+
+def update_used_traffic(traffic_amount: int, user_site: Site):
+    user_site.total_bytes += traffic_amount
+    user_site.save()
+
+def update_transitions_count(user_site: Site):
+    user_site.transitions_count += 1
+    user_site.save()

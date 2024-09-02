@@ -9,7 +9,10 @@
     <ul class="site-list">
         {% for site in sites %}
         <li>
-            <strong>{{ site.name }}</strong> - <a href="{% url 'sites:proxy_view' site_name=site.name %}" target="_blank">{{ site.url }}</a>
+            <strong>{{ site.name }}</strong> <br>
+            Traffic used: <strong>{{ site.total_megabytes }} MB</strong> <br>
+            <a href="{% url 'VPN:proxy_view' site_name=site.name %}" target="_blank">{{ site.url }}</a><br>
+            Transitions count: <strong>{{ site.transitions_count }}</strong>
             <!-- You can also add a button or link to use the internal proxy here -->
 {#            <!-- Example: <a href="{% url 'proxy_view' site_name=site.name %}">Visit via Proxy</a> -->#}
         </li>
