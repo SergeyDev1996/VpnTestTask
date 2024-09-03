@@ -95,3 +95,9 @@ def update_used_traffic(traffic_amount: int, user_site: Site):
 def update_transitions_count(user_site: Site):
     user_site.transitions_count += 1
     user_site.save()
+
+def get_network_response_headers(driver):
+    response = driver.execute_cdp_cmd('Network.getResponseBody', {'requestId': 'some-request-id'})
+    return response
+
+# Example usage
