@@ -53,7 +53,6 @@ COPY . /usr/src/app/
 
 # Expose the port
 EXPOSE 8000
-
 # Make entrypoint script executable
 RUN chmod +x /usr/src/app/entrypoint.sh
 

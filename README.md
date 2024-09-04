@@ -12,20 +12,21 @@ What things you need to install the software:
 ### Installing
 
 A step-by-step series of examples that tell you how to get a development environment running.
-1. Copy the env_template to the env file
-    ```sh
-    cp .env_template .env
-    ```
-2. Clone the repository to your local machine:
+
+1. Clone the repository to your local machine:
 
     ```sh
     git clone https://github.com/SergeyDev1996/VpnTestTask.git
     ```
 
-3. Navigate to the directory where you cloned the repository:
-
-    ```sh
+2. Navigate to the directory where you cloned the repository:
+     ```sh
     cd path-to-your-project
+    ```
+
+3. Copy the env_template to the env file
+    ```sh
+    cp .env_template .env
     ```
 
 4. Build and run the containers using Docker Compose:

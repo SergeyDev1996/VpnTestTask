@@ -1,7 +1,53 @@
 from urllib.parse import urlparse
 
+from selenium.webdriver.chrome.options import Options
+from selenium import webdriver
+
+
+from selenium.webdriver.chrome.service import Service as ChromeService
+from webdriver_manager.chrome import ChromeDriverManager
+
 from sites.models import Site
 
+def setup_selenium_driver():
+    options = setup_selenium_options()
+    driver = webdriver.Chrome(
+        service=ChromeService(ChromeDriverManager().install()),
+        options=options)
+    return driver
+
+
+def change_soup_links(soup, base_url: str, path: str,
+                      site_name: str, current_host: str, user_site):
+    for tag in soup.find_all(['a', 'img', 'script', 'link']):
+        if tag.name == 'a':
+            href = tag.get("href", "")
+            full_url = format_a_link(base_url=base_url,
+                                     href=href,
+                                     path=path,
+                                     site_name=site_name,
+                                     current_host=current_host)
+            tag["href"] = full_url
+        else:
+            for attr in ['src', 'href']:
+                if attr in tag.attrs:
+                    full_url = format_media_link(tag=tag, attr=attr,
+                                                 site=user_site,
+                                                 current_host=current_host)
+                    tag[attr] = full_url
+    return soup
+
+def setup_selenium_options():
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')  # Run in background
+    chrome_options.add_argument('--ignore-certificate-errors')
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--start-maximized')
+    chrome_options.set_capability('goog:loggingPrefs',
+                                  {'performance': 'ALL'})
+    return chrome_options
 
 def extract_base_domain(url: str) -> str:
     """
