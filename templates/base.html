@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title> Your VPN</title>
+    <title>Your VPN</title>
     {% load static %}
     {% block css %}{% endblock %}
     <style>
@@ -32,7 +32,7 @@
     }
 
     /* Navigation link styles */
-    nav a {
+    nav a, nav form {
       text-decoration: none; /* Removes underline from links */
       background-color: #e7e7e7; /* Background color for buttons */
       color: #333; /* Dark text color for links */
@@ -45,13 +45,30 @@
     }
 
     /* Hover effect for buttons */
-    nav a:hover {
+    nav a:hover, nav form:hover {
       background-color: #d4d4d4; /* Slightly darker shade on hover */
     }
 
-    /* Main content styles */
-    main {
-      padding-top: 60px; /* Padding to push down content below fixed header */
+    /* Button styles inside the form to match other links */
+    nav form button {
+      background: none;
+      border: none;
+      padding: 0;
+      font: inherit;
+      cursor: pointer;
+      color: #333;
+      text-decoration: none;
+      padding: 10px 15px; /* Same padding as other nav items */
+      border-radius: 4px; /* Match other nav items */
+      margin-left: 10px; /* Match spacing between other nav items */
+      line-height: 1.5;
+      display: inline-block;
+      transition: background-color 0.3s;
+    }
+
+    /* Hover effect for the logout button */
+    nav form button:hover {
+      background-color: #d4d4d4; /* Same hover effect */
     }
 
     /* Responsive design for the navigation bar */
@@ -60,7 +77,7 @@
         padding: 10px; /* Adjust padding for smaller screens */
       }
 
-      nav a {
+      nav a, nav form {
         margin-left: 5px; /* Reduce spacing between buttons on smaller screens */
       }
     }
@@ -69,10 +86,13 @@
 </head>
 <body>
 <header>
-    <!-- Navigation buttons will go here -->
     <nav>
       {% if user.is_authenticated %}
-        <a href="{% url 'user:logout' %}" class="logout-button">Logout</a>
+        <!-- Logout form -->
+        <form id="logout-form" action="{% url 'user:logout' %}" method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
         <a href="{% url 'sites:my_sites' %}" class="my-sites-button">My Sites</a>
         <a href="{% url 'user:profile' %}" class="my-profile-button">My Profile</a>
       {% else %}
@@ -83,7 +103,7 @@
 </header>
 <div class="container-fluid">
     <div class="row">
-        <div class="col-sm-10 ">
+        <div class="col-sm-10">
             {% block content %}{% endblock %}
         </div>
     </div>

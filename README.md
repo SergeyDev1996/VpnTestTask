@@ -1,112 +1,53 @@
-## Tools and installation
+## Getting Started
 
-Install Docker (for linux):
+These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
-```bash
-sudo apt install apt-transport-https ca-certificates curl software-properties-common
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
-sudo apt install docker-ce
-sudo systemctl status docker
-sudo usermod -aG docker ${USER}
-su - ${USER}
-```
+### Prerequisites
 
-Or install Docker Desktop: [Installation instruction](https://docs.docker.com/desktop/install/windows-install/)
+What things you need to install the software:
 
-Copy and paste values of .env.example file to .env file and edit it for your purposes:
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-```bash
-cat .env_template > .env
-```
+### Installing
 
-## Run
+A step-by-step series of examples that tell you how to get a development environment running.
+1. Copy the env_template to the env file
+    ```sh
+    cp .env_template .env
+    ```
+2. Clone the repository to your local machine:
 
-Start application:
+    ```sh
+    git clone https://github.com/SergeyDev1996/VpnTestTask.git
+    ```
 
-```bash
-docker compose up -d
-```
-```
+3. Navigate to the directory where you cloned the repository:
 
-## Migrations
+    ```sh
+    cd path-to-your-project
+    ```
 
-After any changes in models create and apply migrations:
+4. Build and run the containers using Docker Compose:
 
-```bash
-docker exec free_vpn  python manage.py makemigrations
-docker exec free_vpn  python manage.py migrate
-```
-Install chrome:
-```bash
-sudo apt install wget unzip gnupg
-wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
-echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list
-sduo apt update
-sudo apt install google-chrome-stable
-``` 
+    ```sh
+    docker-compose up --build
+    ```
 
-Or install from here: [Download chrome](https://www.google.com/intl/uk_ua/chrome/) 
+    The `--build` flag is used to build the images before starting the containers.
 
-Sync dependencies:
-
-```bash
-pipenv sync
-```
-
-Run important inventory :
-
-```bash
-docker compose -f inventory-compose.yml up -d
-```
-
-Sync migrations:
-
-```bash
-pipenv run python manage.py migrate
-```
-
-Collect static filest to static/ directory:
-
-```bash
-pipenv run python manage.py  collectstatic
-```
-
-Create super user (Account with unlimited rights on admin panel):
-
-```bash
-pipenv run python manage.py  createsuperuser
-```
-
-Run app for development purposes:
-
-```bash
-pipenv run python manage.py runserver 8005
-```
+5. Your project should now be running on [http://127.0.0.1:8050/](http://127.0.0.1:8050/) (or another port if you've configured it differently in your Docker settings).
+## Creating a New Site
 
 
-After any changes in models create and apply migrations:
 
-```bash
-pipenv run python manage.py makemigrations
-pipenv run python manage.py migrate
-```
+To add a new site to the system, follow these steps:
+1. Create a new user at the (http://127.0.0.1:8050/user/signup/)
+2. Go to the Create New Site page by clicking on the 'Create Site' button located on the 'Your Sites' page.
 
-## Additional commands
+3. In the form provided, enter a unique name for the site in the 'Name' field. This should be an identifier that is easy for you to remember.
 
-Delete all containers and flash all trash:
-
-```bash
-docker stop $(docker ps -aq) && docker rm $(docker ps -aq) && docker container prune -f
-```
-
-Delete all images:
-
-```bash
-docker image rm $(docker image ls -q) && docker image prune -af
-```
-
-## Testing
-
-Recomended sites for testing proxy:
-- [QA theory](https://the-internet.herokuapp.com/)
+4. Enter the full URL of the site you wish to add in the 'URL' field, including the `http://` or `https://` prefix.
+5. Click the 'Submit' button to create the site.
+6. If you see any error messages, such as "A site with this name and URL already exists," correct the information accordingly and re-submit the form.
+7. Once the site is successfully created, go to the list of sites and click "Proxy" button near you site. 

@@ -26,5 +26,7 @@ def create_site(request):
 def my_sites_view(request):
     sites = Site.objects.filter(user=request.user)
     for site in sites:
-        site.total_megabytes = round(site.total_bytes / 1048576, 2)  # Convert bytes to MB
+        site.total_megabytes = round(
+            site.total_bytes / 1048576, 2
+        )  # Convert bytes to MB
     return render(request, 'sites/my_sites.html', {'sites': sites})

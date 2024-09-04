@@ -16,3 +16,27 @@
 .site-list li a:hover {
     text-decoration: underline;
 }
+/* Button styles */
+.proxy-button {
+    background-color: #e7e7e7; /* Gray background */
+    color: #333; /* Dark text color */
+    padding: 10px 15px; /* Padding inside the button */
+    border-radius: 4px; /* Rounded corners */
+    border: 1px solid #ccc; /* Light border */
+    text-decoration: none; /* Remove underline from links */
+    display: inline-block; /* Inline-block to apply padding and margin */
+    margin-left: 10px; /* Space between button and text */
+    transition: background-color 0.3s; /* Smooth transition on hover */
+}
+
+/* Button hover effect */
+.proxy-button:hover {
+    background-color: #d4d4d4; /* Darker gray on hover */
+}
+
+/* Align the button to the right */
+.site-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}

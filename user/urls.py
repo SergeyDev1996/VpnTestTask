@@ -11,6 +11,6 @@ urlpatterns = [
         redirect_authenticated_user=True),
          name="login"),
     path("profile-edit/", edit_profile, name="edit_profile"),
-    path('logout/', LogoutView.as_view(next_page='user:login'), name='logout')
+    path('logout/', LogoutView.as_view(), name="logout")
 ]
 app_name = "user"

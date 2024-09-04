@@ -11,8 +11,9 @@
         <li>
             <strong>{{ site.name }}</strong> <br>
             Traffic used: <strong>{{ site.total_megabytes }} MB</strong> <br>
-            <a href="{% url 'VPN:proxy_view' site_name=site.name %}" target="_blank">{{ site.url }}</a><br>
-            Transitions count: <strong>{{ site.transitions_count }}</strong>
+            <a href="{{ site.url }}" target="_blank">{{ site.url }}</a><br>
+            Transitions count: <strong>{{ site.transitions_count }}</strong><br>
+            <a href="{% url 'VPN:proxy_view' site_name=site.name %}" class="proxy-button">Proxy</a>
             <!-- You can also add a button or link to use the internal proxy here -->
 {#            <!-- Example: <a href="{% url 'proxy_view' site_name=site.name %}">Visit via Proxy</a> -->#}
         </li>

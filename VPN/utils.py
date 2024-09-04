@@ -43,13 +43,19 @@ def link_to_our_website(site_name: str, current_url: str) -> bool:
     # Extract domain from the current URL
     current_domain = extract_base_domain(current_url)
 
-    # Check if the current URL's domain is the same as the site name's domain,
-    # or if the URL is relative, or if the site name is part of the current domain
-    return (bool(parsed_url.netloc) and base_domain == current_domain) or link_is_relative or (
-                base_domain in current_url)
+    # Check if the current URL's domain is the same as the
+    # site name's domain,
+    # or if the URL is relative, or if the site name
+    # is part of the current domain
+    return ((bool(parsed_url.netloc) and base_domain == current_domain)
+            or link_is_relative or (
+                base_domain in current_url))
 
-def format_a_link(base_url: str, href: str, path: str, site_name: str, current_host: str):
-    is_link_to_our_website = link_to_our_website(site_name=base_url, current_url=href)
+
+def format_a_link(base_url: str, href: str, path: str,
+                  site_name: str, current_host: str):
+    is_link_to_our_website = link_to_our_website(site_name=base_url,
+                                                 current_url=href)
     if is_link_to_our_website:
         parsed_url = urlparse(href)
         # formatted_path = format_path(path)
@@ -79,25 +85,31 @@ def format_media_link(tag, attr, site, current_host):
         parsed_url = urlparse(url)
         # Properly format the URL, including query and fragment
         if parsed_url.netloc:
-            full_url = f"{current_host}/static_files_proxy/{site.name}/{parsed_url.netloc}{parsed_url.path}"
+            full_url = (f"{current_host}/static_files_proxy/{site.name}/"
+                        f"{parsed_url.netloc}{parsed_url.path}")
         else:
-            full_url = f"{current_host}/static_files_proxy/{site.name}/{site.url}{parsed_url.path}"
+            full_url = (f"{current_host}/static_files_proxy/"
+                        f"{site.name}/{site.url}{parsed_url.path}")
         if parsed_url.query:
             full_url += f"?{parsed_url.query}"
         if parsed_url.fragment:
             full_url += f"#{parsed_url.fragment}"
         return full_url
 
+
 def update_used_traffic(traffic_amount: int, user_site: Site):
     user_site.total_bytes += traffic_amount
     user_site.save()
+
 
 def update_transitions_count(user_site: Site):
     user_site.transitions_count += 1
     user_site.save()
 
+
 def get_network_response_headers(driver):
-    response = driver.execute_cdp_cmd('Network.getResponseBody', {'requestId': 'some-request-id'})
+    response = driver.execute_cdp_cmd('Network.getResponseBody',
+                                      {'requestId': 'some-request-id'})
     return response
 
 # Example usage
