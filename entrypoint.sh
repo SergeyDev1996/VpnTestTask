@@ -1,4 +1,5 @@
 #!/bin/sh
+
 # Wait for PostgreSQL to be available
 echo "Waiting for PostgreSQL..."
 while ! nc -z postgres 5432; do
