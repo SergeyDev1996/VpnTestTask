@@ -134,6 +134,8 @@ def format_media_link(tag, attr, site, current_host):
             full_url = (f"{current_host}/static_files_proxy/{site.name}/"
                         f"{parsed_url.netloc}{parsed_url.path}")
         else:
+            if not site.url.endswith("/"):
+                site.url += "/"
             full_url = (f"{current_host}/static_files_proxy/"
                         f"{site.name}/{site.url}{parsed_url.path}")
         if parsed_url.query:
