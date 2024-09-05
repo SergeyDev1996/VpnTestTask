@@ -1,3 +1,4 @@
+import re
 from urllib.parse import urlparse
 
 from selenium.webdriver.chrome.options import Options
@@ -9,6 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from sites.models import Site
 
+
 def setup_selenium_driver():
     options = setup_selenium_options()
     driver = webdriver.Chrome(
@@ -19,7 +21,8 @@ def setup_selenium_driver():
 
 def change_soup_links(soup, base_url: str, path: str,
                       site_name: str, current_host: str, user_site):
-    for tag in soup.find_all(['a', 'img', 'script', 'link']):
+    for tag in soup.find_all(['a', 'img', 'script',
+                              'link', 'source', 'audio', 'video']):
         if tag.name == 'a':
             href = tag.get("href", "")
             full_url = format_a_link(base_url=base_url,
@@ -29,13 +32,36 @@ def change_soup_links(soup, base_url: str, path: str,
                                      current_host=current_host)
             tag["href"] = full_url
         else:
-            for attr in ['src', 'href']:
+            for attr in ['src', 'href', 'srcset']:
                 if attr in tag.attrs:
-                    full_url = format_media_link(tag=tag, attr=attr,
+                    url = tag.get(attr, None)
+                    full_url = format_media_link(url=url,
                                                  site=user_site,
                                                  current_host=current_host)
                     tag[attr] = full_url
+    soup = change_style_tags(soup=soup,
+                             current_host=current_host,
+                             user_site=user_site)
     return soup
+
+
+def change_style_tags(soup, current_host, user_site):
+    content = str(soup)
+    url_pattern = re.compile(r"url\((['\"]?)(\/?[^)'\"\s]+)\1\)")
+    for style_tag in soup.find_all('style'):
+        style_content = style_tag.string
+        if style_content:
+            # Find all URLs in the <style> content
+            matches = url_pattern.findall(style_content)
+            # Replace each found URL with the proxy URL
+            for old_url in matches:
+                new_url = format_media_link(url=old_url[1],
+                                            current_host=current_host,
+                                            site=user_site)
+                content = content.replace(f"url('{old_url[1]}')",
+                                          f"url('{new_url}')")
+    return content
+
 
 def setup_selenium_options():
     chrome_options = Options()
@@ -48,6 +74,7 @@ def setup_selenium_options():
     chrome_options.set_capability('goog:loggingPrefs',
                                   {'performance': 'ALL'})
     return chrome_options
+
 
 def extract_base_domain(url: str) -> str:
     """
@@ -125,16 +152,16 @@ def format_a_link(base_url: str, href: str, path: str,
         return full_url
 
 
-def format_media_link(tag, attr, site, current_host):
-    if tag.has_attr(attr):
-        url = tag[attr]
+def format_media_link(url, site, current_host):
+    if url:
         parsed_url = urlparse(url)
         # Properly format the URL, including query and fragment
         if parsed_url.netloc:
             full_url = (f"{current_host}/static_files_proxy/{site.name}/"
                         f"{parsed_url.netloc}{parsed_url.path}")
         else:
-            if not site.url.endswith("/"):
+            if (not parsed_url.path.startswith("/")
+                    and not site.url.endswith("/")):
                 site.url += "/"
             full_url = (f"{current_host}/static_files_proxy/"
                         f"{site.name}/{site.url}{parsed_url.path}")
@@ -159,5 +186,3 @@ def get_network_response_headers(driver):
     response = driver.execute_cdp_cmd('Network.getResponseBody',
                                       {'requestId': 'some-request-id'})
     return response
-
-# Example usage

@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
 from django.urls import reverse_lazy
 
@@ -19,6 +19,8 @@ def user_profile(request):
 
 
 def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect('sites:my_sites')
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
