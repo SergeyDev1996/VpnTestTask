@@ -58,8 +58,8 @@ def change_style_tags(soup, current_host, user_site):
                 new_url = format_media_link(url=old_url[1],
                                             current_host=current_host,
                                             site=user_site)
-                content = content.replace(f"url('{old_url[1]}')",
-                                          f"url('{new_url}')")
+                content = content.replace(f"url({old_url[1]})",
+                                          f"url({new_url})")
     return content
 
 

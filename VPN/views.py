@@ -93,45 +93,45 @@ def static_files_proxy_view(request, site_name, resource_path):
     try:
         response = requests.get(resource_path, headers=headers)
         response.raise_for_status()
-
-        # Determine the content type and host for proxying URLs
-        content_type = response.headers.get('content-type')
-        current_host = f"{request.scheme}://{request.get_host()}/proxy"
-
-        if content_type and content_type.startswith('text/css'):
-            content = response.text
-
-            # Modify URLs in CSS
-            url_pattern = re.compile(r'url\((\/[^)]+)\)')
-            matches = url_pattern.findall(content)
-
-            for old_url in matches:
-                new_url = format_media_link(url=old_url,
-                                            current_host=current_host,
-                                            site=user_site)
-                content = content.replace(f'url({old_url})', f'url({new_url})')
-
-            # Update used traffic based on content length
-            update_used_traffic(
-                traffic_amount=int(response.headers.get("Content-Length", 0)),
-                user_site=user_site
-            )
-
-            # Return modified CSS
-            proxy_response = HttpResponse(content, content_type=content_type)
-        else:
-            # Update used traffic for non-CSS resources
-            update_used_traffic(
-                traffic_amount=int(response.headers.get("Content-Length", 0)),
-                user_site=user_site
-            )
-
-            # Return non-CSS content directly
-            proxy_response = HttpResponse(response.content,
-                                          content_type=content_type)
-
-        # Set CORS header
-        proxy_response["Access-Control-Allow-Origin"] = "*"
-        return proxy_response
     except requests.exceptions.RequestException:
         return HttpResponseNotFound("The resource can not be downloaded")
+
+    # Determine the content type and host for proxying URLs
+    content_type = response.headers.get('content-type')
+    current_host = f"{request.scheme}://{request.get_host()}/proxy"
+
+    if content_type and content_type.startswith('text/css'):
+        content = response.text
+
+        # Modify URLs in CSS
+        url_pattern = re.compile(r'url\((\/[^)]+)\)')
+        matches = url_pattern.findall(content)
+
+        for old_url in matches:
+            new_url = format_media_link(url=old_url,
+                                        current_host=current_host,
+                                        site=user_site)
+            content = content.replace(f'url({old_url})', f'url({new_url})')
+
+        # Update used traffic based on content length
+        update_used_traffic(
+            traffic_amount=int(response.headers.get("Content-Length", 0)),
+            user_site=user_site
+        )
+
+        # Return modified CSS
+        proxy_response = HttpResponse(content, content_type=content_type)
+    else:
+        # Update used traffic for non-CSS resources
+        update_used_traffic(
+            traffic_amount=int(response.headers.get("Content-Length", 0)),
+            user_site=user_site
+        )
+
+        # Return non-CSS content directly
+        proxy_response = HttpResponse(response.content,
+                                      content_type=content_type)
+    # Set CORS header
+    proxy_response["Access-Control-Allow-Origin"] = "*"
+    return proxy_response
+
