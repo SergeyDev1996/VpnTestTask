@@ -172,16 +172,15 @@ def format_a_link(base_url: str, href: str, path: str,
                                                  current_url=href)
     if is_link_to_our_website:
         parsed_url = urlparse(href)
-        if "nltk.html" in href:
-            print(1)
+        link_to_current_page = f"{site_name}"
         if path:
             if "." in path:
                 path = "/".join(path.split("/")[:-1])
-        if href.startswith("/"):
-            link_to_current_page = f"{site_name}"
-        else:
-            link_to_current_page = f"{site_name}/{path}/"
-        link_to_current_page += parsed_url.path
+            link_to_current_page = f"{link_to_current_page}/{path}/"
+        parsed_path = parsed_url.path
+        if not parsed_path.startswith("/"):
+            parsed_path = f"/{parsed_path}"
+        link_to_current_page += parsed_path
         if not parsed_url.netloc:
             # Construct the full URL if it is a relative path
             full_url = f"{current_host}/{link_to_current_page}"

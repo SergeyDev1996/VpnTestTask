@@ -65,7 +65,7 @@ def static_files_proxy_view(request, site_name, resource_path):
     }
     try:
         response = requests.get(resource_path, headers=headers)
-        response.raise_for_status()
+        response.raise_for_status()#
     except requests.exceptions.RequestException:
         return HttpResponseNotFound("The resource can not be downloaded")
 
