@@ -1,5 +1,6 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+import json
 
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
@@ -43,6 +44,46 @@ def change_soup_links(soup, base_url: str, path: str,
                              current_host=current_host,
                              user_site=user_site)
     return soup
+
+
+def ensure_trailing_slash(url: str):
+    """Ensure the URL ends with a trailing slash."""
+    if not url.endswith('/'):
+        return url + '/'
+    return url
+
+
+def get_selenium_response(base_url: str):
+    driver = setup_selenium_driver()
+    driver.get(base_url)
+    driver.implicitly_wait(10)
+    return driver
+
+
+def prepare_base_url(user_site: Site, path: str, request):
+    base_url = ensure_trailing_slash(user_site.url)
+    if path:
+        base_url = urljoin(base_url, path)  # Properly join path to base URL
+    query_string = request.META.get('QUERY_STRING', '')
+    if query_string:
+        base_url = f"{base_url}?{query_string}"
+    return base_url
+
+
+def update_site_statistic(driver, user_site):
+    performance_logs = driver.get_log('performance')
+    performance_list = [
+        json.loads(log['message'].lower())['message']
+        for log in performance_logs
+    ]
+
+    total_traffic = sum([
+        int(log["params"]["response"]["headers"].get("content-length", 0))
+        for log in performance_list
+        if log["method"] == "network.responsereceived"
+    ])
+    update_used_traffic(traffic_amount=total_traffic, user_site=user_site)
+    update_transitions_count(user_site=user_site)
 
 
 def change_style_tags(soup, current_host, user_site):
@@ -131,7 +172,8 @@ def format_a_link(base_url: str, href: str, path: str,
                                                  current_url=href)
     if is_link_to_our_website:
         parsed_url = urlparse(href)
-        # formatted_path = format_path(path)
+        if "nltk.html" in href:
+            print(1)
         if path:
             if "." in path:
                 path = "/".join(path.split("/")[:-1])
