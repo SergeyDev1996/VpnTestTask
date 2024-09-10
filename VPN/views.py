@@ -1,4 +1,3 @@
-import json
 import re
 
 import requests
@@ -7,8 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFound
 
 from VPN.utils import (format_media_link, update_used_traffic,
-                       update_transitions_count, change_soup_links,
-                       setup_selenium_driver, prepare_base_url, get_selenium_response, update_site_statistic)
+                       change_soup_links,
+                       prepare_base_url, get_selenium_response, update_site_statistic)
 from urllib.parse import urlparse
 
 from sites.models import Site
@@ -65,7 +64,7 @@ def static_files_proxy_view(request, site_name, resource_path):
     }
     try:
         response = requests.get(resource_path, headers=headers)
-        response.raise_for_status()#
+        response.raise_for_status()
     except requests.exceptions.RequestException:
         return HttpResponseNotFound("The resource can not be downloaded")
 
@@ -79,19 +78,16 @@ def static_files_proxy_view(request, site_name, resource_path):
         # Modify URLs in CSS
         url_pattern = re.compile(r'url\((\/[^)]+)\)')
         matches = url_pattern.findall(content)
-
         for old_url in matches:
             new_url = format_media_link(url=old_url,
                                         current_host=current_host,
                                         site=user_site)
             content = content.replace(f'url({old_url})', f'url({new_url})')
-
         # Update used traffic based on content length
         update_used_traffic(
             traffic_amount=int(response.headers.get("Content-Length", 0)),
             user_site=user_site
         )
-
         # Return modified CSS
         proxy_response = HttpResponse(content, content_type=content_type)
     else:
@@ -100,7 +96,6 @@ def static_files_proxy_view(request, site_name, resource_path):
             traffic_amount=int(response.headers.get("Content-Length", 0)),
             user_site=user_site
         )
-
         # Return non-CSS content directly
         proxy_response = HttpResponse(response.content,
                                       content_type=content_type)
