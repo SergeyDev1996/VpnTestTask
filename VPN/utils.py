@@ -229,6 +229,7 @@ def get_network_response_headers(driver):
                                       {'requestId': 'some-request-id'})
     return response
 
+
 def change_styles_for_media(content: str, user_site: Site, current_host: str):
     # Modify URLs in CSS
     url_pattern = re.compile(r'url\((\/[^)]+)\)')

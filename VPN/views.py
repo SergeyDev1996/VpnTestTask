@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import (HttpResponse, HttpResponseForbidden,
                          HttpResponseNotFound)
 
-from VPN.utils import (format_media_link, update_used_traffic,
+from VPN.utils import (update_used_traffic,
                        change_soup_links,
                        prepare_base_url, get_selenium_response,
                        update_site_statistic, change_styles_for_media)
