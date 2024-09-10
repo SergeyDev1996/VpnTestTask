@@ -240,3 +240,30 @@ def change_styles_for_media(content: str, user_site: Site, current_host: str):
                                     site=user_site)
         content = content.replace(f'url({old_url})', f'url({new_url})')
     return content
+
+
+def build_url_for_media(request, resource_path):
+    query_string = request.META.get('QUERY_STRING', '')
+    if query_string:
+        resource_path += f"?{query_string}"
+    # Parse the URL and make sure it's fully qualified
+    parsed_url = urlparse(resource_path)
+    if not parsed_url.scheme:
+        resource_path = f"https://{resource_path}"
+    # Set the User-Agent header for the request
+    return resource_path
+
+
+def change_content_links(response, user_site: Site, current_host:
+                         str, content_type: str):
+    if content_type and content_type.startswith('text/css'):
+        content = response.text
+        content = change_styles_for_media(content=content,
+                                          current_host=current_host,
+                                          user_site=user_site
+                                          )
+        # Update used traffic based on content length
+        # Return modified CSS
+    else:
+        content = response.content
+    return content

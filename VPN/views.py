@@ -7,9 +7,8 @@ from django.http import (HttpResponse, HttpResponseForbidden,
 from VPN.utils import (update_used_traffic,
                        change_soup_links,
                        prepare_base_url, get_selenium_response,
-                       update_site_statistic, change_styles_for_media)
-from urllib.parse import urlparse
-
+                       update_site_statistic,
+                       build_url_for_media, change_content_links)
 from sites.models import Site
 
 
@@ -46,14 +45,8 @@ def static_files_proxy_view(request, site_name, resource_path):
     if not user_site:
         return HttpResponseForbidden("You do not have access to this site.")
     # Append the query string if it exists
-    query_string = request.META.get('QUERY_STRING', '')
-    if query_string:
-        resource_path += f"?{query_string}"
-    # Parse the URL and make sure it's fully qualified
-    parsed_url = urlparse(resource_path)
-    if not parsed_url.scheme:
-        resource_path = f"https://{resource_path}"
-    # Set the User-Agent header for the request
+    resource_path = build_url_for_media(request=request,
+                                        resource_path=resource_path)
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -69,16 +62,10 @@ def static_files_proxy_view(request, site_name, resource_path):
     # Determine the content type and host for proxying URLs
     content_type = response.headers.get('content-type')
     current_host = f"{request.scheme}://{request.get_host()}/proxy"
-    if content_type and content_type.startswith('text/css'):
-        content = response.text
-        content = change_styles_for_media(content=content,
-                                          current_host=current_host,
-                                          user_site=user_site
-                                          )
-        # Update used traffic based on content length
-        # Return modified CSS
-    else:
-        content = response.content
+    content = change_content_links(current_host=current_host,
+                                   user_site=user_site,
+                                   response=response,
+                                   content_type=content_type)
     proxy_response = HttpResponse(content,
                                   content_type=content_type)
     update_used_traffic(
