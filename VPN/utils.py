@@ -2,6 +2,7 @@ import re
 from urllib.parse import urlparse, urljoin
 import json
 
+from bs4 import BeautifulSoup
 from selenium.webdriver.chrome.options import Options
 from selenium import webdriver
 
@@ -86,7 +87,7 @@ def update_site_statistic(driver, user_site):
     update_transitions_count(user_site=user_site)
 
 
-def change_style_tags(soup, current_host, user_site):
+def change_style_tags(soup: BeautifulSoup, current_host: str, user_site: Site):
     content = str(soup)
     url_pattern = re.compile(r"url\((['\"]?)(\/?[^)'\"\s]+)\1\)")
     for style_tag in soup.find_all('style'):
@@ -135,7 +136,7 @@ def extract_base_domain(url: str) -> str:
     return domain
 
 
-def check_link_is_relative(parsed_url) -> bool:
+def check_link_is_relative(parsed_url: str) -> bool:
     """
     Determines if the provided URL is relative.
     """
@@ -193,7 +194,7 @@ def format_a_link(base_url: str, href: str, path: str,
         return full_url
 
 
-def format_media_link(url, site, current_host):
+def format_media_link(url: str, site: Site, current_host: str):
     if url:
         parsed_url = urlparse(url)
         # Properly format the URL, including query and fragment
@@ -227,3 +228,14 @@ def get_network_response_headers(driver):
     response = driver.execute_cdp_cmd('Network.getResponseBody',
                                       {'requestId': 'some-request-id'})
     return response
+
+def change_styles_for_media(content: str, user_site: Site, current_host: str):
+    # Modify URLs in CSS
+    url_pattern = re.compile(r'url\((\/[^)]+)\)')
+    matches = url_pattern.findall(content)
+    for old_url in matches:
+        new_url = format_media_link(url=old_url,
+                                    current_host=current_host,
+                                    site=user_site)
+        content = content.replace(f'url({old_url})', f'url({new_url})')
+    return content
