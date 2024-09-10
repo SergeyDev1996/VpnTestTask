@@ -7,7 +7,8 @@ from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotFoun
 
 from VPN.utils import (format_media_link, update_used_traffic,
                        change_soup_links,
-                       prepare_base_url, get_selenium_response, update_site_statistic)
+                       prepare_base_url, get_selenium_response,
+                       update_site_statistic)
 from urllib.parse import urlparse
 
 from sites.models import Site
@@ -19,7 +20,8 @@ def proxy_view(request, site_name, path=None):
     if not user_site:
         return HttpResponseForbidden("You do not have access to this site")
     # Ensure base URL has a trailing slash
-    base_url = prepare_base_url(user_site=user_site, request=request, path=path)
+    base_url = prepare_base_url(user_site=user_site,
+                                request=request, path=path)
     driver = get_selenium_response(base_url)
     html_content = driver.page_source
     soup = BeautifulSoup(html_content, 'html.parser')
