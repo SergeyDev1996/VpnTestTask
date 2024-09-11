@@ -47,8 +47,6 @@ def static_files_proxy_view(request, site_name, resource_path):
     # Append the query string if it exists
     resource_path = build_url_for_media(request=request,
                                         resource_path=resource_path)
-    if "social-links" in resource_path:
-        print(1)
     headers = {
         "User-Agent": (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
