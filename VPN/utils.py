@@ -173,26 +173,19 @@ def format_a_link(base_url: str, href: str, path: str,
                                                  current_url=href)
     if is_link_to_our_website:
         parsed_url = urlparse(href)
-        link_to_current_page = f"{site_name}"
-        if path:
+
+        link_to_current_page = f"{current_host}/{site_name}/"
+        parsed_path = parsed_url.path
+        if path and not parsed_path.startswith("/"):
             if "." in path:
                 path = "/".join(path.split("/")[:-1])
-            link_to_current_page = f"{link_to_current_page}/{path}/"
-        parsed_path = parsed_url.path
-        if not parsed_path.startswith("/"):
-            parsed_path = f"/{parsed_path}"
+            link_to_current_page += f"/{path}"
         link_to_current_page += parsed_path
-        if not parsed_url.netloc:
-            # Construct the full URL if it is a relative path
-            full_url = f"{current_host}/{link_to_current_page}"
-            if parsed_url.query:
-                full_url += f"?{parsed_url.query}"
-            if parsed_url.fragment:
-                full_url += f"#{parsed_url.fragment}"
-        else:
-            full_url = href
-        return full_url
-
+        if parsed_url.query:
+            link_to_current_page += f"?{parsed_url.query}"
+        if parsed_url.fragment:
+            link_to_current_page += f"#{parsed_url.fragment}"
+        return link_to_current_page
 
 def format_media_link(url: str, site: Site, current_host: str):
     if url:
