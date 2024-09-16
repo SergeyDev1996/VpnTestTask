@@ -24,7 +24,7 @@ def setup_selenium_driver():
 def change_soup_links(soup, base_url: str, path: str,
                       site_name: str, current_host: str, user_site):
     for tag in soup.find_all(['a', 'img', 'script',
-                              'link', 'source', 'audio', 'video']):
+                              'link', 'source', 'audio', 'video', 'iframe']):
         if tag.name == 'a':
             href = tag.get("href", "")
             full_url = format_a_link(base_url=base_url,
@@ -100,8 +100,12 @@ def change_style_tags(soup: BeautifulSoup, current_host: str, user_site: Site):
                 new_url = format_media_link(url=old_url[1],
                                             current_host=current_host,
                                             site=user_site)
-                content = content.replace(f"url({old_url[1]})",
-                                          f"url({new_url})")
+                link_already_replaced = content.find(new_url)
+                if link_already_replaced == -1:
+                    content = content.replace(
+                                              f"{old_url[1]}",
+                                              f"{new_url}",
+                                              )
     return content
 
 
@@ -200,6 +204,7 @@ def format_media_link(url: str, site: Site, current_host: str):
                 site.url += "/"
             full_url = (f"{current_host}/static_files_proxy/"
                         f"{site.name}/{site.url}{parsed_url.path}")
+
         if parsed_url.query:
             full_url += f"?{parsed_url.query}"
         if parsed_url.fragment:
@@ -227,11 +232,14 @@ def change_styles_for_media(content: str, user_site: Site, current_host: str):
     # Modify URLs in CSS
     url_pattern = re.compile(r'url\((\/[^)]+)\)')
     matches = url_pattern.findall(content)
+    changed_urls = []
     for old_url in matches:
-        new_url = format_media_link(url=old_url,
-                                    current_host=current_host,
-                                    site=user_site)
-        content = content.replace(f'url({old_url})', f'url({new_url})')
+        if old_url not in changed_urls:
+            new_url = format_media_link(url=old_url,
+                                        current_host=current_host,
+                                        site=user_site)
+            content = content.replace(f'{old_url}', f'{new_url}')
+            changed_urls.append(old_url)
     return content
 
 
@@ -251,7 +259,8 @@ def change_content_links(response, user_site: Site, current_host:
                          str, content_type: str):
     if content_type and content_type.startswith('text/css'):
         content = response.text
-        content = change_styles_for_media(content=content,
+        content = change_styles_for_media(
+                                          content=content,
                                           current_host=current_host,
                                           user_site=user_site
                                           )
